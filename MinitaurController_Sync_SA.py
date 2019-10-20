@@ -24,7 +24,7 @@ while 1:
     angle = '0'
     speed = '1234'
     transfer(angle,speed)
-    t1 = math.sqrt(float(angle)/100/aspeed/2)
+    t1 = math.sqrt(2 * (float(angle) / 100) / aspeed)
 
     t2 = float(speed)/100/aspeed
     if (t1 < t2):
