@@ -13,6 +13,15 @@ from pybullet_envs.minitaur.agents.scripts import utility
 import pybullet_data
 from pybullet_envs.minitaur.envs import simple_ppo_agent
 import ruamel
+import serial
+import binascii
+import time
+
+serialPort = "COM7"     # 通讯端口
+baudRate = 115200       # 通讯波特率(电机默认值)
+arduino = serial.Serial(serialPort,baudRate,timeout=0.5)    # 通过串口通讯方式连接到Arduino
+
+time.sleep(1)
 
 flags = tf.app.flags
 FLAGS = tf.app.flags.FLAGS
@@ -40,16 +49,53 @@ def main(argv):
     sum_reward = 0
     observation = env.reset()
     while True:
+      # 驱动
+      command = 'd'
+      command = bytes(command, encoding='utf8')
+      arduino.write(command)
+      # ppo get action
       action = agent.get_action([observation])
+
+      # transfer ppo action to all motor action
       o_action = copy.deepcopy(action)
       o_action = env.transform_action_to_motor_command(o_action[0])
       print("----- each motor radio -----")
       print(o_action)
       print("----- each motor angle -----")
       pi = 3.14159265359
-      for each_rad in o_action:
-        print(180*each_rad/pi)          
+      deg = []
+      i = 0
+      for each_rad in o_action[:2]:
+        now = 180*each_rad/pi
+      # output action
+        command = str(i)
+        command = bytes(command, encoding='utf8')
+        arduino.write(command)
+        '''
+        command = input('请输入转动方向(+-)')
+        command = bytes(command, encoding='utf8')
+        arduino.write(command)
+        '''
+        command = str(now)
+        command = bytes(command, encoding='utf8')
+        print(command)
+        arduino.write(command)
+
+        # 如需更高速度，要更改Arduino代码
+        command = '10000'
+        command = bytes(command, encoding='utf8')
+        print(command)
+        arduino.write(command)
+        i = i + 1
+        '''
+        msg = arduino.read(14)
+        msg = binascii.b2a_hex(msg).decode('utf-8')
+        print(msg)
+        '''      
       observation, reward, done, _ = env.step(action[0])
+      '''
+      replace observation with a real observation
+      '''
       time.sleep(0.002)
       sum_reward += reward
       if done:
