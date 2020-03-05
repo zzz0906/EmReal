@@ -25,7 +25,7 @@ import ruamel.yaml as yaml
 import tensorflow as tf
 
 from pybullet_envs.minitaur.agents import tools
-
+from pybullet_envs.minitaur.agents.tools import wrappers
 
 def define_simulation_graph(batch_env, algo_cls, config):
   """Define the algortihm and environment interaction.
@@ -65,7 +65,7 @@ def define_batch_env(constructor, num_agents, env_processes):
   """
   with tf.variable_scope('environments'):
     if env_processes:
-      envs = [tools.wrappers.ExternalProcess(constructor) for _ in range(num_agents)]
+      envs = [wrappers.ExternalProcess(constructor) for _ in range(num_agents)]
     else:
       envs = [constructor() for _ in range(num_agents)]
     batch_env = tools.BatchEnv(envs, blocking=not env_processes)
@@ -192,8 +192,6 @@ def load_config(logdir):
                'contain a configuration file.')
     raise IOError(message)
   with tf.gfile.FastGFile(config_path, 'r') as file_:
-    message = "----------------------------------------------------------------"+config_path+"----------------------------------------------------------------"
-    tf.logging.info(message)
     config = yaml.load(file_)
   message = 'Resume run and write summaries and checkpoints to {}.'
   tf.logging.info(message.format(config.logdir))
